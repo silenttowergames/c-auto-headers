@@ -183,13 +183,21 @@ void createHeaderFile(const char* fullName, const char* fullNameHeader, int head
         free(prefix);
     }
     
+    int writingStreak = 0;
     while((read = getline(&line, &length, file)) != -1)
     {
         int toBreak = 0;
         int lineLastChar = -1;
         
-        if(line[0] == ' ' || line[0] == '\t' || line[0] == '\n' || line[0] == '\r' || line[0] == '{' || line[0] == '}' || line[0] == '#')
+        if(!writingStreak && (line[0] == ' ' || line[0] == '\t' || line[0] == '\n' || line[0] == '\r' || line[0] == '{' || line[0] == '}' || line[0] == '#'))
         {
+            continue;
+        }
+        
+        if(writingStreak && line[0] == '{')
+        {
+            writingStreak = 0;
+            
             continue;
         }
         
@@ -218,13 +226,38 @@ void createHeaderFile(const char* fullName, const char* fullNameHeader, int head
             continue;
         }
         
+        int stopWritingStreak = 0;
+        if(line[lineLastChar] == '(')
+        {
+            writingStreak = 1;
+        }
+        else if(line[lineLastChar + 1] == ')')
+        {
+            lineLastChar++;
+            writingStreak = 0;
+            stopWritingStreak = 1;
+        }
+        
         char* lineFull = malloc(sizeof(char) * (lineLastChar + 4));
         memcpy(lineFull, line, sizeof(char) * (lineLastChar + 1));
-        lineFull[lineLastChar + 1] = ';';
-        lineFull[lineLastChar + 2] = '\n';
-        lineFull[lineLastChar + 3] = '\0';
+        if(writingStreak)
+        {
+            lineFull[lineLastChar + 1] = '\n';
+            lineFull[lineLastChar + 2] = '\0';
+        }
+        else
+        {
+            lineFull[lineLastChar + 1] = ';';
+            lineFull[lineLastChar + 2] = '\n';
+            lineFull[lineLastChar + 3] = '\0';
+        }
         fputs(lineFull, header);
         free(lineFull);
+        
+        if(!stopWritingStreak)
+        {
+            writingStreak = 1;
+        }
     }
     
     fclose(file);
