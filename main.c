@@ -23,6 +23,10 @@ int main(int argc, char** args)
         startDir = ".";
     }
     
+    printf("WARNING: Do you want all header files under `%s` to be overwritten? If so, hit ENTER\n", startDir);
+    
+    while(getchar() != '\n'){}
+    
     printf("Watching for C files to be saved in %s\n", startDir);
     
     while(1)
